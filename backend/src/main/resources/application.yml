@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tntime
+    username: tntime_user
+    password: tntime_pass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.tntime: DEBUG
+    org.hibernate.SQL: WARN
+
+# ─── TNTIME App Config ─────────────────────────────────────────
+tntime:
+  gdelt:
+    poll-interval-ms: 300000    # 5 minutes
+    base-url: https://api.gdeltproject.org/api/v2/doc/doc
+    adm1-code: IN25
+    max-records: 100
+  rss:
+    poll-interval-ms: 180000    # 3 minutes
+    feeds:
+      - name: The Hindu TN
+        url: https://www.thehindu.com/news/states/tamil-nadu/feeder/default.rss
+      - name: DT Next
+        url: https://www.dtnext.in/rss/tamil-nadu
+      - name: Times of India Chennai
+        url: https://timesofindia.indiatimes.com/rssfeeds_all.cms?id=2803134

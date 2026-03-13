@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import MapCore from './components/MapCore';
+import { useLiveEvents } from './hooks/useLiveEvents';
 import './index.css';
 
 // ─── Live Clock ───────────────────────────────────────────────
@@ -76,13 +77,14 @@ function TopNav() {
 }
 
 // ─── Left Sidebar ─────────────────────────────────────────────
-function LeftSidebar() {
+function LeftSidebar({ activeLayers, toggleLayer }) {
   const layers = [
-    { label: 'POLITICS', color: 'bg-[#ff2a2a]' },
-    { label: 'ACCIDENTS', color: 'bg-[#ffdd00]' },
-    { label: 'WEATHER', color: 'bg-[#00e5ff]' },
-    { label: 'CRIME', color: 'bg-[#ff6600]' },
-    { label: 'INFRASTRUCTURE', color: 'bg-[#94a3b8]' }
+    { id: 'POLITICS', label: 'POLITICS', color: 'bg-[#ff2a2a]' },
+    { id: 'ACCIDENT', label: 'ACCIDENTS', color: 'bg-[#ffdd00]' },
+    { id: 'WEATHER', label: 'WEATHER', color: 'bg-[#00e5ff]' },
+    { id: 'CRIME', label: 'CRIME', color: 'bg-[#ff6600]' },
+    { id: 'INFRASTRUCTURE', label: 'INFRASTRUCTURE', color: 'bg-[#94a3b8]' },
+    { id: 'OTHER', label: 'OTHER', color: 'bg-[#a3a3a3]' },
   ];
 
   return (
@@ -94,18 +96,25 @@ function LeftSidebar() {
       </div>
       <div className="p-3 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3">
-          {layers.map((layer) => (
-            <label key={layer.label} className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative flex items-center justify-center w-3 h-3 border border-gray-700 bg-[#0a0a0a] group-hover:border-neon-slate transition-colors">
-                <input type="checkbox" defaultChecked className="opacity-0 absolute inset-0 cursor-pointer" />
-                {/* Custom checkmark/dot */}
-                <div className={`w-1.5 h-1.5 ${layer.color} shadow-[0_0_4px_currentColor]`} />
-              </div>
-              <span className="readout text-gray-300 text-[10px] tracking-wider group-hover:text-white transition-colors">
-                {layer.label}
-              </span>
-            </label>
-          ))}
+          {layers.map((layer) => {
+            const isActive = activeLayers[layer.id];
+            return (
+              <label key={layer.label} className="flex items-center gap-3 cursor-pointer group">
+                <div className={`relative flex items-center justify-center w-3 h-3 border ${isActive ? 'border-gray-500' : 'border-gray-800'} bg-[#0a0a0a] group-hover:border-neon-slate transition-colors`}>
+                  <input 
+                    type="checkbox" 
+                    checked={isActive}
+                    onChange={() => toggleLayer(layer.id)}
+                    className="opacity-0 absolute inset-0 cursor-pointer" 
+                  />
+                  <div className={`w-1.5 h-1.5 ${layer.color} shadow-[0_0_4px_currentColor] transition-opacity ${isActive ? 'opacity-100' : 'opacity-20'}`} />
+                </div>
+                <span className={`readout text-[10px] tracking-wider transition-colors ${isActive ? 'text-gray-200' : 'text-gray-600'} group-hover:text-white`}>
+                  {layer.label}
+                </span>
+              </label>
+            );
+          })}
         </div>
       </div>
     </aside>
@@ -113,7 +122,12 @@ function LeftSidebar() {
 }
 
 // ─── Bottom Dock ──────────────────────────────────────────────
-function BottomDock() {
+function BottomDock({ liveEvents, loading }) {
+  const formatTime = (isoString) => {
+    const d = new Date(isoString);
+    return `-[${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}]-`;
+  };
+
   return (
     <footer className="h-64 shrink-0 border-t border-gray-800 bg-[#080808] grid grid-cols-3 divide-x divide-gray-800 z-20">
       {/* Col 1: Live News Feed */}
@@ -125,13 +139,21 @@ function BottomDock() {
           </h2>
         </div>
         <div className="flex-1 p-3 flex flex-col gap-2 overflow-y-auto">
-          {/* Placeholders */}
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="readout text-[10px] text-gray-400 border-l-2 border-gray-700 pl-2 py-1">
-              <span className="text-gray-600 block mb-1">-[10:42:0{i}]-</span>
-              Awaiting real-time stream data from backend services...
-            </div>
-          ))}
+          {loading && liveEvents.length === 0 && (
+            <div className="readout text-[10px] text-neon-slate animate-pulse">Establishing secure link to data engine...</div>
+          )}
+          {liveEvents.map((feature) => {
+            const props = feature.properties;
+            const isHigh = props.severity === 'HIGH';
+            return (
+              <div key={props.id} className={`readout text-[10px] border-l-2 pl-2 py-1 ${isHigh ? 'border-red-600 bg-red-900/10' : 'border-gray-700 hover:bg-[#111]'}`}>
+                <span className="text-gray-500 block mb-0.5">{formatTime(props.eventTime)} <span className="text-neon-slate">{props.district}</span></span>
+                <a href={props.sourceUrl} target="_blank" rel="noreferrer" className={`block hover:underline ${isHigh ? 'text-red-400 font-bold' : 'text-gray-300'}`}>
+                  {props.title}
+                </a>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -178,6 +200,19 @@ export default function App() {
   const containerRef = useRef(null);
   const [cursorCoords, setCursorCoords] = useState(null);
 
+  // Live Backend Data Hook
+  const { data: geoData, loading, lastUpdated } = useLiveEvents(15000);
+
+  // Layer toggles
+  const [activeLayers, setActiveLayers] = useState({
+    POLITICS: true, ACCIDENT: true, WEATHER: true, 
+    CRIME: true, INFRASTRUCTURE: true, OTHER: true
+  });
+
+  const toggleLayer = (id) => {
+    setActiveLayers(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const handleMapReady = useCallback((map) => {
     mapRef.current = map;
 
@@ -201,6 +236,9 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Filter geoData based on active layers
+  const filteredEvents = geoData?.features?.filter(f => activeLayers[f.properties.category]) || [];
+
   return (
     <div className="fixed inset-0 w-screen h-screen flex flex-col bg-[#0a0a0a] text-gray-200 overflow-hidden select-none">
       
@@ -211,7 +249,7 @@ export default function App() {
       <main className="flex-1 flex flex-row overflow-hidden relative">
         
         {/* Left Sidebar */}
-        <LeftSidebar />
+        <LeftSidebar activeLayers={activeLayers} toggleLayer={toggleLayer} />
 
         {/* Center Map Container */}
         <div 
@@ -226,7 +264,7 @@ export default function App() {
             }}
           />
 
-          <MapCore onMapReady={handleMapReady} />
+          <MapCore onMapReady={handleMapReady} geoData={{ type: 'FeatureCollection', features: filteredEvents }} />
 
           {/* Coordinate Overlay Floating on Map */}
           {cursorCoords && (
@@ -241,7 +279,7 @@ export default function App() {
       </main>
 
       {/* 3. Bottom Dock */}
-      <BottomDock />
+      <BottomDock liveEvents={filteredEvents} loading={loading} />
 
     </div>
   );

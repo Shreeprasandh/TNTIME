@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { createNeonPin } from './NeonPin';
 
 // ─── Tamil Nadu Bounding Box ─────────────────────────────────
 const TN_BOUNDS = [[76.15, 8.07], [80.34, 13.56]];
@@ -8,9 +9,10 @@ const TN_BOUNDS = [[76.15, 8.07], [80.34, 13.56]];
 // ─── MapLibre Style: CARTO Dark Matter (no API key needed) ───
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
-export default function MapCore({ onMapReady }) {
+export default function MapCore({ onMapReady, geoData }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const markersRef = useRef({});
 
   useEffect(() => {
     if (mapRef.current) return; // already initialised
@@ -79,10 +81,40 @@ export default function MapCore({ onMapReady }) {
     containerRef.current.addEventListener('contextmenu', (e) => e.preventDefault());
 
     return () => {
+      // Clean up map and markers
+      Object.values(markersRef.current).forEach(m => m.remove());
+      markersRef.current = {};
       map.remove();
       mapRef.current = null;
     };
   }, [onMapReady]);
+
+  // Handle marker reconciliation when geoData changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const currentIds = new Set();
+
+    geoData?.features?.forEach(feature => {
+      const id = feature.properties.id;
+      currentIds.add(id);
+
+      // If marker doesn't exist, create it
+      if (!markersRef.current[id]) {
+        const marker = createNeonPin(feature, mapRef.current);
+        marker.addTo(mapRef.current);
+        markersRef.current[id] = marker;
+      }
+    });
+
+    // Remove markers that are no longer in the active geoData list (e.g., filtered out)
+    Object.keys(markersRef.current).forEach(id => {
+      if (!currentIds.has(id)) {
+        markersRef.current[id].remove();
+        delete markersRef.current[id];
+      }
+    });
+  }, [geoData]);
 
   return (
     <div

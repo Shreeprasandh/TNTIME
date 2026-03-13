@@ -3,51 +3,15 @@
   "features": [
     {
       "type": "Feature",
-      "properties": {
-        "description": "Inverted Tamil Nadu spotlight mask. Outer ring covers the entire world. Inner ring (hole) traces Tamil Nadu's border — the cutout that lets TN show through while the rest of the world is darkened. PASTE YOUR HIGH-FIDELITY COORDINATE ARRAY as the second array inside 'coordinates' below, replacing the placeholder rectangle.",
-        "placeholder": true
-      },
+      "properties": {},
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
-            [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
+            [180, 90], [-180, 90], [-180, -90], [180, -90], [180, 90]
           ],
           [
-            [76.15, 8.07],
-            [76.30, 8.10],
-            [76.50, 8.15],
-            [76.80, 8.20],
-            [77.20, 8.25],
-            [77.60, 8.35],
-            [78.00, 8.50],
-            [78.40, 8.80],
-            [78.80, 9.10],
-            [79.20, 9.50],
-            [79.60, 9.90],
-            [79.90, 10.40],
-            [80.10, 10.90],
-            [80.30, 11.50],
-            [80.34, 12.00],
-            [80.30, 12.50],
-            [80.20, 13.00],
-            [80.10, 13.30],
-            [79.80, 13.50],
-            [79.40, 13.56],
-            [78.80, 13.50],
-            [78.20, 13.30],
-            [77.80, 13.10],
-            [77.40, 12.80],
-            [77.00, 12.50],
-            [76.60, 12.00],
-            [76.40, 11.50],
-            [76.20, 11.00],
-            [76.15, 10.50],
-            [76.20, 10.00],
-            [76.30, 9.50],
-            [76.30, 9.00],
-            [76.25, 8.50],
-            [76.15, 8.07]
+            [76.15, 8.07], [76.15, 13.56], [80.34, 13.56], [80.34, 8.07], [76.15, 8.07]
           ]
         ]
       }

@@ -33,27 +33,26 @@ export default function MapCore({ onMapReady }) {
 
     map.on('load', () => {
       // ── Add inverted spotlight mask ──────────────────────────
-      map.addSource('tn-mask', {
+      map.addSource('tn-inverted-mask', {
         type: 'geojson',
         data: '/tn-mask.geojson',
       });
 
-      // Dark fill over everything outside TN
       map.addLayer({
-        id: 'tn-mask-fill',
+        id: 'tn-blur-mask',
         type: 'fill',
-        source: 'tn-mask',
+        source: 'tn-inverted-mask',
         paint: {
-          'fill-color': '#000005',
-          'fill-opacity': 0.82,
+          'fill-color': '#000000',
+          'fill-opacity': 0.85,
         },
       });
 
-      // Neon green inner border glow around TN
+      // Neon green inner border glow around TN (updated source)
       map.addLayer({
         id: 'tn-border-glow-outer',
         type: 'line',
-        source: 'tn-mask',
+        source: 'tn-inverted-mask',
         paint: {
           'line-color': 'rgba(57, 255, 20, 0.15)',
           'line-width': 6,
@@ -65,7 +64,7 @@ export default function MapCore({ onMapReady }) {
       map.addLayer({
         id: 'tn-border-line',
         type: 'line',
-        source: 'tn-mask',
+        source: 'tn-inverted-mask',
         paint: {
           'line-color': 'rgba(57, 255, 20, 0.55)',
           'line-width': 1.2,
